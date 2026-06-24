@@ -109,7 +109,10 @@ export function CallScreen() {
       )}
 
       {phase !== "ended" && (
-        <div className="flex items-center justify-center gap-4 p-8">
+        // relative + z-10: the full-screen video above is `absolute`, which paints
+        // above static in-flow siblings regardless of DOM order — without this the
+        // video intercepts every click on these buttons.
+        <div className="relative z-10 flex items-center justify-center gap-4 p-8">
           <Button
             size="icon"
             variant="secondary"
