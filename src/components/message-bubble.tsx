@@ -1,7 +1,13 @@
 "use client";
 
-import { Forward, Pencil, Reply, Trash2 } from "lucide-react";
+import { Forward, MoreHorizontal, Pencil, Reply, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ReactionPicker } from "@/components/reaction-picker";
 import { useAuthStore } from "@/lib/auth-store";
 import { formatTimestamp } from "@/lib/format";
@@ -46,21 +52,47 @@ export function MessageBubble({
     : message.content.text;
   const reactionGroups = groupReactions(message.reactions);
 
+  // Compact and always rendered (no hover-only visibility) so actions are
+  // reachable by tap on touch devices, not just mouse hover. Kept small (two
+  // buttons) so it doesn't meaningfully shift the bubble's own alignment.
+  const actions = (
+    <div className="flex items-end gap-1">
+      <ReactionPicker onSelect={(emoji) => onReact(message, emoji)} />
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-7" />}>
+          <MoreHorizontal className="size-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align={isOwn ? "end" : "start"}>
+          <DropdownMenuItem onClick={() => onReply(message)}>
+            <Reply className="size-4" />
+            Reply
+          </DropdownMenuItem>
+          {!message.isDeletedForEveryone && (
+            <DropdownMenuItem onClick={() => onForward(message)}>
+              <Forward className="size-4" />
+              Forward
+            </DropdownMenuItem>
+          )}
+          {isOwn && isText && !message.isDeletedForEveryone && (
+            <DropdownMenuItem onClick={() => onEdit(message)}>
+              <Pencil className="size-4" />
+              Edit
+            </DropdownMenuItem>
+          )}
+          {isOwn && !message.isDeletedForEveryone && (
+            <DropdownMenuItem onClick={() => onDelete(message, "everyone")}>
+              <Trash2 className="size-4" />
+              Delete
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+
   return (
     <div className={cn("group flex gap-1", isOwn ? "justify-end" : "justify-start")}>
-      {!isOwn && (
-        <div className="flex items-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          <ReactionPicker onSelect={(emoji) => onReact(message, emoji)} />
-          <Button variant="ghost" size="icon" className="size-7" onClick={() => onReply(message)}>
-            <Reply className="size-4" />
-          </Button>
-          {!message.isDeletedForEveryone && (
-            <Button variant="ghost" size="icon" className="size-7" onClick={() => onForward(message)}>
-              <Forward className="size-4" />
-            </Button>
-          )}
-        </div>
-      )}
+      {!isOwn && actions}
 
       <div className="flex max-w-[70%] flex-col gap-1">
         <div
@@ -119,34 +151,7 @@ export function MessageBubble({
         )}
       </div>
 
-      {isOwn && (
-        <div className="flex items-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          {!message.isDeletedForEveryone && (
-            <Button variant="ghost" size="icon" className="size-7" onClick={() => onForward(message)}>
-              <Forward className="size-4" />
-            </Button>
-          )}
-          <ReactionPicker onSelect={(emoji) => onReact(message, emoji)} />
-          <Button variant="ghost" size="icon" className="size-7" onClick={() => onReply(message)}>
-            <Reply className="size-4" />
-          </Button>
-          {isText && !message.isDeletedForEveryone && (
-            <Button variant="ghost" size="icon" className="size-7" onClick={() => onEdit(message)}>
-              <Pencil className="size-4" />
-            </Button>
-          )}
-          {!message.isDeletedForEveryone && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              onClick={() => onDelete(message, "everyone")}
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          )}
-        </div>
-      )}
+      {isOwn && actions}
     </div>
   );
 }

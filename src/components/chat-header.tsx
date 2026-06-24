@@ -36,7 +36,13 @@ export function ChatHeader({
 
   return (
     <header className="flex items-center gap-3 border-b p-3">
-      <Button variant="ghost" size="icon" className="-ml-1 md:hidden" render={<Link href="/chat" />}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="-ml-1 md:hidden"
+        nativeButton={false}
+        render={<Link href="/chat" />}
+      >
         <ArrowLeft className="size-4" />
       </Button>
       <Avatar>
