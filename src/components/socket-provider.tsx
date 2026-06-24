@@ -18,7 +18,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const socket = connectSocket(accessToken);
-    const { setUserOnline, setUserOffline, setTyping } = useRealtimeStore.getState();
+    const { setUserOnline, setUserOffline, setOnlineSnapshot, setTyping } =
+      useRealtimeStore.getState();
 
     const onMessageNew = (raw: ChatMessage) => {
       const message = withId(raw);
@@ -105,6 +106,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     const onPresenceOnline = ({ userId }: { userId: string }) => setUserOnline(userId);
     const onPresenceOffline = ({ userId }: { userId: string }) =>
       setUserOffline(userId);
+    const onPresenceSnapshot = ({ onlineUserIds }: { onlineUserIds: string[] }) =>
+      setOnlineSnapshot(onlineUserIds);
 
     const onTypingStart = ({
       conversationId,
@@ -153,6 +156,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socket.on("message:reaction-updated", onReactionUpdated);
     socket.on("presence:online", onPresenceOnline);
     socket.on("presence:offline", onPresenceOffline);
+    socket.on("presence:snapshot", onPresenceSnapshot);
     socket.on("typing:start", onTypingStart);
     socket.on("typing:stop", onTypingStop);
     socket.on("group:member-added", onGroupMembersChanged);
@@ -167,6 +171,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       socket.off("message:reaction-updated", onReactionUpdated);
       socket.off("presence:online", onPresenceOnline);
       socket.off("presence:offline", onPresenceOffline);
+      socket.off("presence:snapshot", onPresenceSnapshot);
       socket.off("typing:start", onTypingStart);
       socket.off("typing:stop", onTypingStop);
       socket.off("group:member-added", onGroupMembersChanged);
