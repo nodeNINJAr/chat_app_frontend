@@ -1,6 +1,7 @@
 "use client";
 
-import { Info, Phone, Search, Video } from "lucide-react";
+import { ArrowLeft, Info, Phone, Search, Video } from "lucide-react";
+import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useConversationDisplay } from "@/hooks/use-conversation-display";
@@ -35,6 +36,9 @@ export function ChatHeader({
 
   return (
     <header className="flex items-center gap-3 border-b p-3">
+      <Button variant="ghost" size="icon" className="-ml-1 md:hidden" render={<Link href="/chat" />}>
+        <ArrowLeft className="size-4" />
+      </Button>
       <Avatar>
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary external/signed URL */}
         {avatarUrl && <img src={avatarUrl} alt={name} />}

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ChatHeader } from "@/components/chat-header";
+import { ChatSkeleton } from "@/components/chat-skeleton";
 import { ConversationInfoDialog } from "@/components/conversation-info-dialog";
 import { ForwardDialog } from "@/components/forward-dialog";
 import { MessageBubble } from "@/components/message-bubble";
@@ -228,9 +229,7 @@ function ConversationView({ conversationId }: { conversationId: string }) {
 
       <ScrollArea className="flex-1 p-4">
         <div className="flex flex-col gap-3">
-          {isLoading && (
-            <p className="text-center text-sm text-muted-foreground">Loading…</p>
-          )}
+          {isLoading && <ChatSkeleton />}
           {!isLoading && messages && messages.length > 0 && !noMoreHistory && (
             <Button
               variant="ghost"

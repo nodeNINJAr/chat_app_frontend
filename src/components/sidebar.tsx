@@ -36,7 +36,7 @@ export function Sidebar() {
     return () => clearTimeout(t);
   }, [query]);
 
-  const { data: conversations } = useQuery({
+  const { data: conversations, isLoading: conversationsLoading } = useQuery({
     queryKey: ["conversations"],
     queryFn: getConversations,
   });
@@ -66,7 +66,7 @@ export function Sidebar() {
   const showResults = debouncedQuery.length > 0;
 
   return (
-    <aside className="flex h-full w-80 shrink-0 flex-col border-r">
+    <aside className="flex h-full w-full flex-col border-r">
       <div className="flex items-center justify-between gap-2 border-b p-3">
         <div className="flex items-center gap-2 overflow-hidden">
           <Avatar className="size-8">
@@ -123,7 +123,17 @@ export function Sidebar() {
                     </div>
                   </button>
                 ))
-            : conversations?.map((c) => (
+            : conversationsLoading
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 px-3 py-2">
+                    <div className="size-10 shrink-0 animate-pulse rounded-full bg-muted" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+                    </div>
+                  </div>
+                ))
+              : conversations?.map((c) => (
                 <ConversationRow
                   key={c.id}
                   conversation={c}
