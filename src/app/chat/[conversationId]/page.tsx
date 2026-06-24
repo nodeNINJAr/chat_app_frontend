@@ -227,7 +227,10 @@ function ConversationView({ conversationId }: { conversationId: string }) {
         }
       />
 
-      <ScrollArea className="flex-1 p-4">
+      {/* min-h-0: flex items default to min-height:auto (their content's size),
+          which would let this grow past the available space instead of
+          scrolling internally and pushing the composer off-screen. */}
+      <ScrollArea className="min-h-0 flex-1 p-4">
         <div className="flex flex-col gap-3">
           {isLoading && <ChatSkeleton />}
           {!isLoading && messages && messages.length > 0 && !noMoreHistory && (

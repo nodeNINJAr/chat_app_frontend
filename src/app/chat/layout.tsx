@@ -44,7 +44,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
       </div>
       <main
         className={cn(
-          "flex flex-1 flex-col",
+          "flex min-h-0 flex-1 flex-col",
           !conversationOpen && "hidden md:flex",
         )}
       >
