@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowLeft, Info, Phone, Search, Video } from "lucide-react";
+import { ArrowLeft, Info, Phone, Search, Users, Video } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useConversationDisplay } from "@/hooks/use-conversation-display";
 import { initials } from "@/lib/format";
@@ -51,7 +52,15 @@ export function ChatHeader({
         <AvatarFallback>{initials(name)}</AvatarFallback>
       </Avatar>
       <button onClick={onOpenInfo} className="flex-1 overflow-hidden text-left">
-        <p className="truncate text-sm font-medium">{name}</p>
+        <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+          <span className="truncate">{name}</span>
+          {isGroup && (
+            <Badge variant="secondary" className="shrink-0">
+              <Users />
+              Group
+            </Badge>
+          )}
+        </p>
         <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
       </button>
       {!isGroup && onStartCall && (

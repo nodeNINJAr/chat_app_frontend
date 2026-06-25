@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -18,7 +19,12 @@ import { GroupMemberRow } from "@/components/group-member-row";
 import { GroupSettingsForm } from "@/components/group-settings-form";
 import { useConversationDisplay } from "@/hooks/use-conversation-display";
 import { useGroupMembers, useInvalidateGroup } from "@/hooks/use-group";
-import { blockUser, listBlockedUsers, unblockUser } from "@/lib/api";
+import {
+  blockUser,
+  deleteConversationForMe,
+  listBlockedUsers,
+  unblockUser,
+} from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { initials } from "@/lib/format";
 import type { ConversationSummary } from "@/lib/types";
@@ -34,6 +40,7 @@ export function ConversationInfoDialog({
 }) {
   const currentUserId = useAuthStore((s) => s.user?.id);
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { name, avatarUrl, isGroup, peer, peerId, group } =
     useConversationDisplay(conversation);
   const { data: members, isLoading: membersLoading } = useGroupMembers(
@@ -65,6 +72,22 @@ export function ConversationInfoDialog({
       await refetchBlocked();
     } catch {
       toast.error("Action failed");
+    }
+  }
+
+  // Hides the conversation from this user's own list only — it never
+  // deletes the group/chat itself, so it's safe for any participant
+  // (including the group's owner) to use without affecting anyone else.
+  async function handleDeleteChat() {
+    if (!conversation) return;
+    try {
+      await deleteConversationForMe(conversation.id);
+      await queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      onOpenChange(false);
+      toast.success("Chat deleted");
+      router.push("/chat");
+    } catch {
+      toast.error("Failed to delete chat");
     }
   }
 
@@ -151,6 +174,19 @@ export function ConversationInfoDialog({
                   ))}
                 </div>
               </ScrollArea>
+            </>
+          )}
+
+          {!editingGroup && (
+            <>
+              <Separator />
+              <Button
+                variant="outline"
+                className="text-destructive"
+                onClick={handleDeleteChat}
+              >
+                Delete chat
+              </Button>
             </>
           )}
         </DialogContent>

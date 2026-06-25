@@ -65,6 +65,15 @@ export function createDirectConversation(userId: string) {
     .then((r) => withId(r.data));
 }
 
+// Hides the conversation from this user's own list only — other
+// participants, group membership, and message history are unaffected. It
+// reappears automatically if a new message arrives.
+export function deleteConversationForMe(conversationId: string) {
+  return apiClient
+    .patch(`/conversations/${conversationId}/state`, { isDeletedForUser: true })
+    .then((r) => r.data);
+}
+
 // Backend returns newest-first (cursor pagination). Reversed here so callers
 // can render top-to-bottom and append new realtime messages at the end.
 export function getMessages(conversationId: string, before?: string) {

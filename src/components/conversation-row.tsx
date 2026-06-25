@@ -1,8 +1,10 @@
 "use client";
 
+import { Users } from "lucide-react";
 import Link from "next/link";
 import { useConversationDisplay } from "@/hooks/use-conversation-display";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { formatTimestamp, initials } from "@/lib/format";
 import { useRealtimeStore } from "@/lib/realtime-store";
 import type { ConversationSummary } from "@/lib/types";
@@ -38,7 +40,15 @@ export function ConversationRow({
       </div>
       <div className="flex-1 overflow-hidden">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="truncate text-sm font-medium">{name}</span>
+          <span className="flex items-center gap-1.5 truncate text-sm font-medium">
+            <span className="truncate">{name}</span>
+            {isGroup && (
+              <Badge variant="secondary" className="shrink-0">
+                <Users />
+                Group
+              </Badge>
+            )}
+          </span>
           <span className="shrink-0 text-xs text-muted-foreground">
             {formatTimestamp(conversation.lastMessageAt)}
           </span>

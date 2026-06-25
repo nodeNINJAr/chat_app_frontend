@@ -66,6 +66,7 @@ export interface ConversationSummary {
   isMuted: boolean;
   isArchived: boolean;
   isPinned: boolean;
+  isDeletedForUser: boolean;
   role: string;
   otherParticipantIds: string[];
 }
