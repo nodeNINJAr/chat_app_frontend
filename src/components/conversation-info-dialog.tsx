@@ -36,7 +36,7 @@ export function ConversationInfoDialog({
   const queryClient = useQueryClient();
   const { name, avatarUrl, isGroup, peer, peerId, group } =
     useConversationDisplay(conversation);
-  const { data: members } = useGroupMembers(
+  const { data: members, isLoading: membersLoading } = useGroupMembers(
     isGroup ? conversation?.groupId : undefined,
   );
   const invalidateGroup = useInvalidateGroup(conversation?.groupId);
@@ -90,7 +90,7 @@ export function ConversationInfoDialog({
               <Avatar className="size-16">
                 {avatarUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarUrl} alt={name} />
+                  <img src={avatarUrl} alt={name} loading="lazy" decoding="async" />
                 )}
                 <AvatarFallback className="text-lg">{initials(name)}</AvatarFallback>
               </Avatar>
@@ -132,6 +132,13 @@ export function ConversationInfoDialog({
               </div>
               <ScrollArea className="max-h-72">
                 <div className="flex flex-col gap-1">
+                  {membersLoading &&
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 px-2 py-2">
+                        <div className="size-8 shrink-0 animate-pulse rounded-full bg-muted" />
+                        <div className="h-3 flex-1 animate-pulse rounded bg-muted" />
+                      </div>
+                    ))}
                   {members?.map((m) => (
                     <GroupMemberRow
                       key={m.userId}

@@ -168,7 +168,7 @@ function ProfileForm({ me }: { me: UserProfile }) {
         <Avatar className="size-16">
           {avatarUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt={displayName} />
+            <img src={avatarUrl} alt={displayName} decoding="async" />
           )}
           <AvatarFallback className="text-lg">{initials(displayName || "?")}</AvatarFallback>
         </Avatar>
@@ -215,8 +215,12 @@ function ProfileForm({ me }: { me: UserProfile }) {
 }
 
 export default function SettingsPage() {
-  const { data: me } = useQuery({ queryKey: ["me"], queryFn: getMe });
-  const { data: blocked, refetch: refetchBlocked } = useQuery({
+  const { data: me, isLoading: meLoading } = useQuery({ queryKey: ["me"], queryFn: getMe });
+  const {
+    data: blocked,
+    isLoading: blockedLoading,
+    refetch: refetchBlocked,
+  } = useQuery({
     queryKey: ["blocked-users"],
     queryFn: listBlockedUsers,
   });
@@ -231,6 +235,14 @@ export default function SettingsPage() {
           </p>
         </div>
 
+        {meLoading && (
+          <div className="flex flex-col gap-4">
+            <div className="size-16 animate-pulse rounded-full bg-muted" />
+            <div className="h-9 w-full animate-pulse rounded-md bg-muted" />
+            <div className="h-20 w-full animate-pulse rounded-md bg-muted" />
+            <div className="h-9 w-full animate-pulse rounded-md bg-muted" />
+          </div>
+        )}
         {me && <ProfileForm me={me} />}
 
         <Separator />
@@ -253,6 +265,13 @@ export default function SettingsPage() {
           </p>
         </div>
         <div className="flex flex-col gap-1">
+          {blockedLoading &&
+            Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-2 py-2">
+                <div className="size-8 shrink-0 animate-pulse rounded-full bg-muted" />
+                <div className="h-3 flex-1 animate-pulse rounded bg-muted" />
+              </div>
+            ))}
           {blocked?.length === 0 && (
             <p className="text-sm text-muted-foreground">No blocked users.</p>
           )}

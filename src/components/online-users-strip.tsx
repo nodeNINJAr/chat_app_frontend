@@ -25,7 +25,7 @@ function OnlinePersonAvatar({
         <Avatar className="size-12">
           {profile?.avatarUrl && (
             // eslint-disable-next-line @next/next/no-img-element -- arbitrary external/signed URL
-            <img src={profile.avatarUrl} alt={profile.displayName} />
+            <img src={profile.avatarUrl} alt={profile.displayName} loading="lazy" decoding="async" />
           )}
           <AvatarFallback>{initials(profile?.displayName ?? "?")}</AvatarFallback>
         </Avatar>

@@ -54,7 +54,16 @@ export default function CallHistoryPage() {
     <ScrollArea className="min-h-0 flex-1">
       <div className="mx-auto flex max-w-lg flex-col gap-2 p-6">
         <h1 className="mb-2 text-lg font-semibold">Call history</h1>
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 px-3 py-2">
+              <div className="size-10 shrink-0 animate-pulse rounded-full bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+              </div>
+            </div>
+          ))}
         {calls?.length === 0 && (
           <p className="text-sm text-muted-foreground">No calls yet.</p>
         )}

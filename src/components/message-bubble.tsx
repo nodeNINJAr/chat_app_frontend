@@ -125,7 +125,12 @@ export function MessageBubble({
   );
 
   return (
-    <div className={cn("group flex gap-1", isOwn ? "justify-end" : "justify-start")}>
+    <div
+      className={cn(
+        "group flex gap-1 animate-in fade-in slide-in-from-bottom-1 duration-200",
+        isOwn ? "justify-end" : "justify-start",
+      )}
+    >
       {!isOwn && actions}
 
       <div className="flex max-w-[70%] flex-col gap-1">

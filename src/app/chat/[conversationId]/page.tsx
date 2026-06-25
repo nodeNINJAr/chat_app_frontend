@@ -1,16 +1,14 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ChatHeader } from "@/components/chat-header";
 import { ChatSkeleton } from "@/components/chat-skeleton";
-import { ConversationInfoDialog } from "@/components/conversation-info-dialog";
-import { ForwardDialog } from "@/components/forward-dialog";
 import { MessageBubble } from "@/components/message-bubble";
 import { MessageComposer } from "@/components/message-composer";
-import { MessageSearchDialog } from "@/components/message-search-dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTypingEmitter } from "@/hooks/use-typing-emitter";
@@ -21,6 +19,19 @@ import { useRealtimeStore } from "@/lib/realtime-store";
 import { getSocket } from "@/lib/socket";
 import type { ChatMessage } from "@/lib/types";
 import { messageTypeFromKind, uploadFile } from "@/lib/upload";
+
+// All three are opened from infrequent actions (header tap, message
+// forward, search icon) — split out of the conversation route's initial
+// bundle instead of shipping with every message render.
+const ConversationInfoDialog = dynamic(() =>
+  import("@/components/conversation-info-dialog").then((mod) => mod.ConversationInfoDialog),
+);
+const ForwardDialog = dynamic(() =>
+  import("@/components/forward-dialog").then((mod) => mod.ForwardDialog),
+);
+const MessageSearchDialog = dynamic(() =>
+  import("@/components/message-search-dialog").then((mod) => mod.MessageSearchDialog),
+);
 
 export default function ConversationPage() {
   const { conversationId } = useParams<{ conversationId: string }>();
@@ -214,7 +225,7 @@ function ConversationView({ conversationId }: { conversationId: string }) {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col animate-in fade-in duration-150">
       <ChatHeader
         conversation={conversation}
         typingUserIds={typingUserIds}

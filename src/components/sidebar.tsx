@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ConversationRow } from "@/components/conversation-row";
-import { CreateGroupDialog } from "@/components/create-group-dialog";
 import { OnlineUsersStrip } from "@/components/online-users-strip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,12 @@ import { createDirectConversation, getConversations, logout, searchUsers } from 
 import { useAuthStore } from "@/lib/auth-store";
 import { initials } from "@/lib/format";
 import { disconnectSocket } from "@/lib/socket";
+
+// Only needed once the user opens "New group" — split into its own chunk
+// instead of shipping it in the sidebar's initial bundle.
+const CreateGroupDialog = dynamic(() =>
+  import("@/components/create-group-dialog").then((mod) => mod.CreateGroupDialog),
+);
 
 export function Sidebar() {
   const router = useRouter();

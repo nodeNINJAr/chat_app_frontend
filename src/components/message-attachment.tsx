@@ -2,10 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { FileIcon, Download } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import { getDownloadUrl } from "@/lib/api";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { ChatMessage } from "@/lib/types";
+
+const apiOrigin = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 // content.mediaUrl holds the storage *key*, not a renderable URL (S3/local-disk
 // download URLs are short-lived signed links) — resolve a fresh one on render.
@@ -35,21 +38,26 @@ export function MessageAttachment({ message }: { message: ChatMessage }) {
           onClick={() => setViewerOpen(true)}
           className="block cursor-zoom-in"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary signed-URL host, not worth next/image config */}
-          <img
+          <Image
             src={url}
             alt={message.content.fileName ?? "image"}
-            className="max-h-72 max-w-72 rounded-md object-cover"
+            width={288}
+            height={288}
+            unoptimized={!url.startsWith(apiOrigin)}
+            className="h-auto max-h-72 w-auto max-w-72 rounded-md object-cover"
           />
         </button>
         <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
           <DialogContent className="flex max-w-[calc(100%-2rem)] items-center justify-center border-none bg-transparent p-0 shadow-none sm:max-w-3xl">
-            {/* eslint-disable-next-line @next/next/no-img-element -- same arbitrary signed-URL host as above */}
-            <img
-              src={url}
-              alt={message.content.fileName ?? "image"}
-              className="max-h-[85vh] w-auto max-w-full rounded-md object-contain"
-            />
+            <div className="relative h-[85vh] w-full max-w-3xl">
+              <Image
+                src={url}
+                alt={message.content.fileName ?? "image"}
+                fill
+                unoptimized={!url.startsWith(apiOrigin)}
+                className="rounded-md object-contain"
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </>

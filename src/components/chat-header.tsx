@@ -47,7 +47,7 @@ export function ChatHeader({
       </Button>
       <Avatar>
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary external/signed URL */}
-        {avatarUrl && <img src={avatarUrl} alt={name} />}
+        {avatarUrl && <img src={avatarUrl} alt={name} loading="lazy" decoding="async" />}
         <AvatarFallback>{initials(name)}</AvatarFallback>
       </Avatar>
       <button onClick={onOpenInfo} className="flex-1 overflow-hidden text-left">
