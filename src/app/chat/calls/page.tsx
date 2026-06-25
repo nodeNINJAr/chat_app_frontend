@@ -51,7 +51,7 @@ export default function CallHistoryPage() {
   });
 
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea className="min-h-0 flex-1">
       <div className="mx-auto flex max-w-lg flex-col gap-2 p-6">
         <h1 className="mb-2 text-lg font-semibold">Call history</h1>
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}

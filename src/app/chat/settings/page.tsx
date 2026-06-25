@@ -222,7 +222,7 @@ export default function SettingsPage() {
   });
 
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea className="min-h-0 flex-1">
       <div className="mx-auto flex max-w-lg flex-col gap-6 p-6">
         <div>
           <h1 className="text-lg font-semibold">Profile</h1>
