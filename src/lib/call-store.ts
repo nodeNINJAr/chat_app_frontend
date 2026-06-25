@@ -27,7 +27,7 @@ export const CALL_END_REASON_MESSAGE: Record<CallEndReason, string> = {
   busy: "User is on another call",
   timeout: "No answer",
   ended: "Call ended",
-  error: "Call failed — check microphone/camera permissions",
+  error: "Call failed — check your connection or device permissions",
   accepted_elsewhere: "Accepted on another device",
 };
 
@@ -76,6 +76,28 @@ function teardownPeerConnection() {
 
 function stopStream(stream: MediaStream | null) {
   stream?.getTracks().forEach((t) => t.stop());
+}
+
+// SDP exchange just means both sides agreed on *how* to connect — actual
+// media only starts once ICE/DTLS finish negotiating, which can take a
+// while on restrictive networks. Driving "active" off connectionstatechange
+// instead of the offer/answer roundtrip keeps "Connecting…" on screen for
+// as long as that really takes, instead of claiming success early and then
+// hanging on a frozen call screen. Also gives us a real failure path.
+function wireConnectionStateHandlers(
+  connection: RTCPeerConnection,
+  callId: string,
+  set: (partial: Partial<CallState>) => void,
+  get: () => CallState,
+) {
+  connection.onconnectionstatechange = () => {
+    if (get().callId !== callId) return;
+    if (connection.connectionState === "connected") {
+      if (get().phase !== "active") set({ phase: "active", startedAt: Date.now() });
+    } else if (connection.connectionState === "failed") {
+      get().handleRemoteEnd("error");
+    }
+  };
 }
 
 export const useCallStore = create<CallState>((set, get) => ({
@@ -130,6 +152,7 @@ export const useCallStore = create<CallState>((set, get) => ({
       pc.ontrack = (e) => {
         set({ remoteStream: e.streams[0] });
       };
+      wireConnectionStateHandlers(pc, callId, set, get);
 
       getCallSocket()?.emit("call:accept", { callId });
     } catch {
@@ -214,6 +237,7 @@ export const useCallStore = create<CallState>((set, get) => ({
       pc.ontrack = (e) => {
         set({ remoteStream: e.streams[0] });
       };
+      wireConnectionStateHandlers(pc, callId, set, get);
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
@@ -234,7 +258,8 @@ export const useCallStore = create<CallState>((set, get) => ({
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
     getCallSocket()?.emit("call:answer", { callId, sdp: answer });
-    set({ phase: "active", startedAt: Date.now() });
+    // phase flips to "active" via wireConnectionStateHandlers once media is
+    // actually flowing, not here — SDP exchange alone doesn't mean connected.
   },
 
   handleAnswer: async (callId, sdp) => {
@@ -244,7 +269,6 @@ export const useCallStore = create<CallState>((set, get) => ({
       await pc.addIceCandidate(candidate);
     }
     pendingCandidates = [];
-    set({ phase: "active", startedAt: Date.now() });
   },
 
   handleIceCandidate: async (callId, candidate) => {

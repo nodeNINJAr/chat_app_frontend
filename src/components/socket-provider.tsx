@@ -47,6 +47,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       );
       queryClient.setQueryData<ConversationSummary[]>(["conversations"], (prev) => {
         if (!prev) return prev;
+        if (!prev.some((c) => c.id === message.conversationId)) {
+          // Brand-new conversation (its first message ever) — nothing here to
+          // patch yet, so refetch the list instead of silently dropping it.
+          void queryClient.invalidateQueries({ queryKey: ["conversations"] });
+          return prev;
+        }
         return prev.map((c) =>
           c.id === message.conversationId
             ? {
