@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { CALL_END_REASON_MESSAGE, useCallStore } from "@/lib/call-store";
 import { initials } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 function useElapsedSeconds(startedAt: number | null) {
   const [seconds, setSeconds] = useState(0);
@@ -53,8 +54,22 @@ export function CallScreen() {
   }, [localStream]);
 
   useEffect(() => {
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
-    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = remoteStream;
+    // Autoplay-with-sound can be silently blocked by the browser even after a
+    // recent click (e.g. "Accept call"), leaving srcObject set but the element
+    // paused with nothing rendered. Starting muted always autoplays; unmuting
+    // right after playback begins doesn't re-trigger the gesture requirement.
+    for (const el of [remoteVideoRef.current, remoteAudioRef.current]) {
+      if (!el) continue;
+      el.srcObject = remoteStream;
+      if (remoteStream) {
+        el.muted = true;
+        el.play()
+          .then(() => {
+            el.muted = false;
+          })
+          .catch(() => {});
+      }
+    }
   }, [remoteStream]);
 
   useEffect(() => {
@@ -70,12 +85,19 @@ export function CallScreen() {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black text-white">
-      {isVideo && phase === "active" ? (
+      {isVideo ? (
+        // Mounted for the whole call (not just once phase === "active") so the
+        // ref exists by the time ontrack fires during "connecting" — swapping
+        // this element in/out based on phase meant srcObject was assigned to
+        // an element that hadn't mounted yet and never got reapplied.
         <video
           ref={remoteVideoRef}
           autoPlay
           playsInline
-          className="absolute inset-0 size-full object-cover"
+          className={cn(
+            "absolute inset-0 size-full object-cover",
+            phase !== "active" && "opacity-0",
+          )}
         />
       ) : (
         <audio ref={remoteAudioRef} autoPlay />
