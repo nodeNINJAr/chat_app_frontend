@@ -6,6 +6,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { withId } from "@/lib/normalize";
 import { useRealtimeStore } from "@/lib/realtime-store";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
+import { playMessageSound } from "@/lib/sounds";
 import type { ChatMessage, ConversationSummary, GroupSummary } from "@/lib/types";
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
@@ -23,8 +24,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     const onMessageNew = (raw: ChatMessage) => {
       const message = withId(raw);
-      if (message.senderId !== useAuthStore.getState().user?.id) {
+      const isOwnMessage = message.senderId === useAuthStore.getState().user?.id;
+      if (!isOwnMessage) {
         socket.emit("message:delivered", { messageId: message.id });
+        const isViewingConversation =
+          window.location.pathname === `/chat/${message.conversationId}`;
+        if (!isViewingConversation) playMessageSound();
       }
       queryClient.setQueryData<ChatMessage[]>(
         ["messages", message.conversationId],

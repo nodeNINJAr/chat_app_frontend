@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { getTurnCredentials } from "./api";
 import { getCallSocket } from "./call-socket";
+import { startRingtone, stopRingtone } from "./sounds";
 import { buildIceServers } from "./webrtc";
 
 export type CallPhase =
@@ -100,6 +101,7 @@ export const useCallStore = create<CallState>((set, get) => ({
         localStream,
         endReason: null,
       });
+      startRingtone();
       getCallSocket()?.emit("call:initiate", { calleeId, type });
     } catch {
       set({ endReason: "error", phase: "ended" });
@@ -109,6 +111,7 @@ export const useCallStore = create<CallState>((set, get) => ({
   acceptCall: async () => {
     const { callId, type } = get();
     if (!callId || !type) return;
+    stopRingtone();
     try {
       const localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints(type));
       set({ phase: "connecting", localStream });
@@ -185,6 +188,7 @@ export const useCallStore = create<CallState>((set, get) => ({
       return;
     }
     set({ phase: "incoming-ringing", callId, peerId: callerId, type, endReason: null });
+    startRingtone();
   },
 
   handleRinging: (callId) => {
@@ -194,6 +198,7 @@ export const useCallStore = create<CallState>((set, get) => ({
   handleAccepted: async (callId) => {
     const { localStream } = get();
     if (!localStream || get().callId !== callId) return;
+    stopRingtone();
     try {
       const creds = await getTurnCredentials();
       pc = new RTCPeerConnection({ iceServers: buildIceServers(creds) });
@@ -252,6 +257,7 @@ export const useCallStore = create<CallState>((set, get) => ({
   },
 
   handleRemoteEnd: (reason) => {
+    stopRingtone();
     const { localStream, remoteStream } = get();
     stopStream(localStream);
     stopStream(remoteStream);
