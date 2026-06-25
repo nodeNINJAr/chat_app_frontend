@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,7 +14,103 @@ import { Textarea } from "@/components/ui/textarea";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { getMe, listBlockedUsers, unblockUser, updateProfile } from "@/lib/api";
 import { initials } from "@/lib/format";
+import {
+  type MessageSoundVariant,
+  type RingtoneVariant,
+  usePreferencesStore,
+} from "@/lib/preferences-store";
+import { previewMessageSound, previewRingtone } from "@/lib/sounds";
 import type { UserProfile } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+const RINGTONE_OPTIONS: { value: RingtoneVariant; label: string }[] = [
+  { value: "classic", label: "Classic" },
+  { value: "chime", label: "Chime" },
+  { value: "pulse", label: "Pulse" },
+];
+
+const MESSAGE_SOUND_OPTIONS: { value: MessageSoundVariant; label: string }[] = [
+  { value: "ding", label: "Ding" },
+  { value: "pop", label: "Pop" },
+  { value: "bell", label: "Bell" },
+];
+
+function NotificationSettings() {
+  const ringtoneEnabled = usePreferencesStore((s) => s.ringtoneEnabled);
+  const ringtoneVariant = usePreferencesStore((s) => s.ringtoneVariant);
+  const messageSoundEnabled = usePreferencesStore((s) => s.messageSoundEnabled);
+  const messageSoundVariant = usePreferencesStore((s) => s.messageSoundVariant);
+  const setRingtoneEnabled = usePreferencesStore((s) => s.setRingtoneEnabled);
+  const setRingtoneVariant = usePreferencesStore((s) => s.setRingtoneVariant);
+  const setMessageSoundEnabled = usePreferencesStore((s) => s.setMessageSoundEnabled);
+  const setMessageSoundVariant = usePreferencesStore((s) => s.setMessageSoundVariant);
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">Ringtone</p>
+          <p className="text-xs text-muted-foreground">
+            Play a sound for incoming and outgoing calls.
+          </p>
+        </div>
+        <Checkbox
+          checked={ringtoneEnabled}
+          onCheckedChange={(checked) => setRingtoneEnabled(checked === true)}
+        />
+      </div>
+      <div className="flex gap-2">
+        {RINGTONE_OPTIONS.map((option) => (
+          <Button
+            key={option.value}
+            type="button"
+            size="sm"
+            variant={ringtoneVariant === option.value ? "default" : "secondary"}
+            className={cn(!ringtoneEnabled && "opacity-50")}
+            onClick={() => {
+              setRingtoneVariant(option.value);
+              previewRingtone(option.value);
+            }}
+          >
+            {option.label}
+          </Button>
+        ))}
+      </div>
+
+      <Separator />
+
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">Message sound</p>
+          <p className="text-xs text-muted-foreground">
+            Play a sound for new messages in chats you&apos;re not viewing.
+          </p>
+        </div>
+        <Checkbox
+          checked={messageSoundEnabled}
+          onCheckedChange={(checked) => setMessageSoundEnabled(checked === true)}
+        />
+      </div>
+      <div className="flex gap-2">
+        {MESSAGE_SOUND_OPTIONS.map((option) => (
+          <Button
+            key={option.value}
+            type="button"
+            size="sm"
+            variant={messageSoundVariant === option.value ? "default" : "secondary"}
+            className={cn(!messageSoundEnabled && "opacity-50")}
+            onClick={() => {
+              setMessageSoundVariant(option.value);
+              previewMessageSound(option.value);
+            }}
+          >
+            {option.label}
+          </Button>
+        ))}
+      </div>
+    </>
+  );
+}
 
 function BlockedUserRow({ blockedId, onUnblocked }: { blockedId: string; onUnblocked: () => void }) {
   const { data: profile } = useUserProfile(blockedId);
@@ -135,6 +232,17 @@ export default function SettingsPage() {
         </div>
 
         {me && <ProfileForm me={me} />}
+
+        <Separator />
+
+        <div>
+          <h2 className="text-lg font-semibold">Notifications &amp; sound</h2>
+          <p className="text-sm text-muted-foreground">
+            Choose how calls and new messages sound.
+          </p>
+        </div>
+
+        <NotificationSettings />
 
         <Separator />
 

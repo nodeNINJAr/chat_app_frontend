@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ConversationRow } from "@/components/conversation-row";
 import { CreateGroupDialog } from "@/components/create-group-dialog";
+import { OnlineUsersStrip } from "@/components/online-users-strip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -92,6 +93,8 @@ export function Sidebar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {!query && <OnlineUsersStrip conversations={conversations} />}
 
       <div className="p-3">
         <Input
