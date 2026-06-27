@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { AvatarPicker } from "@/components/avatar-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,11 +21,22 @@ export function GroupSettingsForm({
 }) {
   const [name, setName] = useState(group.name);
   const [description, setDescription] = useState(group.description ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(group.avatarUrl);
   const [whoCanSendMessages, setWhoCanSendMessages] = useState(
     group.settings.whoCanSendMessages,
   );
   const [whoCanAddMembers, setWhoCanAddMembers] = useState(group.settings.whoCanAddMembers);
   const [saving, setSaving] = useState(false);
+
+  async function handleAvatarUploaded(url: string) {
+    setAvatarUrl(url);
+    try {
+      await updateGroupSettings(group.id, { avatarUrl: url });
+      toast.success("Group photo updated");
+    } catch {
+      toast.error("Failed to save group photo");
+    }
+  }
 
   async function save() {
     setSaving(true);
@@ -45,6 +57,7 @@ export function GroupSettingsForm({
 
   return (
     <div className="flex flex-col gap-3">
+      <AvatarPicker name={name} avatarUrl={avatarUrl} onUploaded={handleAvatarUploaded} />
       <div className="flex flex-col gap-2">
         <Label htmlFor="group-edit-name">Name</Label>
         <Input id="group-edit-name" value={name} onChange={(e) => setName(e.target.value)} />

@@ -1,8 +1,11 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Monitor, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useState } from "react";
 import { toast } from "sonner";
+import { AvatarPicker } from "@/components/avatar-picker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -138,12 +141,64 @@ function BlockedUserRow({ blockedId, onUnblocked }: { blockedId: string; onUnblo
   );
 }
 
+const THEME_OPTIONS = [
+  { value: "system", label: "System", icon: Monitor },
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+] as const;
+
+function AppearanceSettings() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <div className="flex gap-2">
+      {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setTheme(value)}
+          // next-themes can't know the persisted theme until the client
+          // reads localStorage, so the highlighted option can legitimately
+          // differ between the server-rendered HTML and the first client
+          // render — suppressHydrationWarning (next-themes' own documented
+          // pattern) avoids a hydration warning for that single mismatch.
+          suppressHydrationWarning
+          className={cn(
+            "flex flex-1 flex-col items-center gap-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors",
+            theme === value
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border text-muted-foreground hover:bg-accent",
+          )}
+        >
+          <Icon className="size-4" />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ProfileForm({ me }: { me: UserProfile }) {
   const queryClient = useQueryClient();
   const [displayName, setDisplayName] = useState(me.displayName);
   const [bio, setBio] = useState(me.bio ?? "");
-  const [avatarUrl, setAvatarUrl] = useState(me.avatarUrl ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(me.avatarUrl ?? null);
   const [saving, setSaving] = useState(false);
+
+  function refreshMe() {
+    return queryClient.invalidateQueries({ queryKey: ["me"] });
+  }
+
+  async function handleAvatarUploaded(url: string) {
+    setAvatarUrl(url);
+    try {
+      await updateProfile({ avatarUrl: url });
+      await refreshMe();
+      toast.success("Avatar updated");
+    } catch {
+      toast.error("Failed to save avatar");
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -151,12 +206,11 @@ function ProfileForm({ me }: { me: UserProfile }) {
       await updateProfile({
         displayName: displayName.trim() || undefined,
         bio: bio.trim() || undefined,
-        avatarUrl: avatarUrl.trim() || undefined,
       });
-      await queryClient.invalidateQueries({ queryKey: ["me"] });
+      await refreshMe();
       toast.success("Profile updated");
     } catch {
-      toast.error("Failed to update profile — check the avatar URL is a valid link");
+      toast.error("Failed to update profile");
     } finally {
       setSaving(false);
     }
@@ -165,13 +219,7 @@ function ProfileForm({ me }: { me: UserProfile }) {
   return (
     <>
       <div className="flex items-center gap-4">
-        <Avatar className="size-16">
-          {avatarUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt={displayName} decoding="async" />
-          )}
-          <AvatarFallback className="text-lg">{initials(displayName || "?")}</AvatarFallback>
-        </Avatar>
+        <AvatarPicker name={displayName} avatarUrl={avatarUrl} onUploaded={handleAvatarUploaded} />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -192,19 +240,6 @@ function ProfileForm({ me }: { me: UserProfile }) {
           maxLength={160}
           rows={3}
         />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="avatarUrl">Avatar URL</Label>
-        <Input
-          id="avatarUrl"
-          value={avatarUrl}
-          onChange={(e) => setAvatarUrl(e.target.value)}
-          placeholder="https://…"
-        />
-        <p className="text-xs text-muted-foreground">
-          Paste a link to an image. (Self-hosted avatar upload isn&apos;t supported yet.)
-        </p>
       </div>
 
       <Button onClick={handleSave} disabled={saving} className="self-start">
@@ -244,6 +279,15 @@ export default function SettingsPage() {
           </div>
         )}
         {me && <ProfileForm me={me} />}
+
+        <Separator />
+
+        <div>
+          <h2 className="text-lg font-semibold">Appearance</h2>
+          <p className="text-sm text-muted-foreground">Choose how the app looks.</p>
+        </div>
+
+        <AppearanceSettings />
 
         <Separator />
 

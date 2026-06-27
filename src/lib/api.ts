@@ -186,11 +186,19 @@ export function requestUploadUrl(input: {
   fileName: string;
   mimeType: string;
   fileSize: number;
-  kind: UploadKind;
+  // "avatar" isn't part of the chat-message UploadKind union since it's
+  // never sent as a message — it's its own upload kind on the backend.
+  kind: UploadKind | "avatar";
 }) {
   return apiClient
     .post<UploadTarget>("/uploads/presign", input)
     .then((r) => r.data);
+}
+
+export function getAvatarPublicUrl(key: string) {
+  return apiClient
+    .get<{ url: string }>("/uploads/public-url", { params: { key } })
+    .then((r) => r.data.url);
 }
 
 export function getDownloadUrl(key: string) {
