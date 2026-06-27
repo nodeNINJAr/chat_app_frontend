@@ -11,6 +11,7 @@ import { MessageBubble } from "@/components/message-bubble";
 import { MessageComposer } from "@/components/message-composer";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useGroup, useGroupMembers } from "@/hooks/use-group";
 import { useTypingEmitter } from "@/hooks/use-typing-emitter";
 import { getConversations, getMessages } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -73,6 +74,17 @@ function ConversationView({ conversationId }: { conversationId: string }) {
   const messageById = new Map(messages?.map((m) => [m.id, m]));
   const lastMessageId = messages?.[messages.length - 1]?.id;
 
+  const isGroup = conversation?.type === "group";
+  const { data: group } = useGroup(isGroup ? conversation.groupId : undefined);
+  const { data: groupMembers } = useGroupMembers(isGroup ? conversation.groupId : undefined);
+  const myRole = groupMembers?.find((m) => m.userId === currentUser?.id)?.role;
+  const canManage = myRole === "owner" || myRole === "admin";
+  // Members-only restriction only applies in groups, and only once the
+  // group's settings have actually loaded — default to allowed so the
+  // composer doesn't flash disabled while that query is still in flight.
+  const canSendMessages =
+    !isGroup || group?.settings.whoCanSendMessages !== "admins" || canManage;
+
   useEffect(() => {
     scrollAnchorRef.current?.scrollIntoView({ block: "end" });
     // Deliberately keyed on the *last* message id, not array length — loading
@@ -114,6 +126,9 @@ function ConversationView({ conversationId }: { conversationId: string }) {
   function sendText() {
     const text = draft.trim();
     if (!text || !currentUser) return;
+    // Editing an already-sent message isn't gated by whoCanSendMessages —
+    // only composing a brand-new message is.
+    if (!canSendMessages && !editingMessage) return;
 
     if (editingMessage) {
       queryClient.setQueryData<ChatMessage[]>(
@@ -163,7 +178,7 @@ function ConversationView({ conversationId }: { conversationId: string }) {
   }
 
   async function handleUploadFile(file: File) {
-    if (!currentUser) return;
+    if (!currentUser || !canSendMessages) return;
     setUploading(true);
     try {
       const { key, kind } = await uploadFile(file);
@@ -292,6 +307,9 @@ function ConversationView({ conversationId }: { conversationId: string }) {
         onSubmit={sendText}
         onUploadFile={handleUploadFile}
         uploading={uploading}
+        disabledReason={
+          !canSendMessages && !editingMessage ? "Only admins can send messages in this group" : null
+        }
       />
 
       <ConversationInfoDialog

@@ -17,6 +17,7 @@ export function MessageComposer({
   onSubmit,
   onUploadFile,
   uploading,
+  disabledReason,
 }: {
   draft: string;
   onDraftChange: (value: string) => void;
@@ -27,6 +28,7 @@ export function MessageComposer({
   onSubmit: () => void;
   onUploadFile: (file: File) => void;
   uploading: boolean;
+  disabledReason?: string | null;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dummy, setDummy] = useState(0); // forces remount of file input after each pick
@@ -41,6 +43,16 @@ export function MessageComposer({
     }
     onUploadFile(file);
     setDummy((d) => d + 1);
+  }
+
+  if (disabledReason && !editingMessage) {
+    return (
+      <div className="border-t p-3">
+        <div className="rounded-md bg-muted px-3 py-2 text-center text-sm text-muted-foreground">
+          {disabledReason}
+        </div>
+      </div>
+    );
   }
 
   return (
