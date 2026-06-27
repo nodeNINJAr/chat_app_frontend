@@ -1,6 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "next-themes";
 import { useEffect, useState } from "react";
 import { CallProvider } from "@/components/call-provider";
 import { SocketProvider } from "@/components/socket-provider";
@@ -48,13 +49,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthBootstrap>
-        <SocketProvider>
-          <CallProvider>{children}</CallProvider>
-        </SocketProvider>
-      </AuthBootstrap>
-      <Toaster />
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <AuthBootstrap>
+          <SocketProvider>
+            <CallProvider>{children}</CallProvider>
+          </SocketProvider>
+        </AuthBootstrap>
+        <Toaster />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
