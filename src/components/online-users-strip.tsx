@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { initials } from "@/lib/format";
 import { useRealtimeStore } from "@/lib/realtime-store";
@@ -24,8 +24,7 @@ function OnlinePersonAvatar({
       <div className="relative">
         <Avatar className="size-12">
           {profile?.avatarUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- arbitrary external/signed URL
-            <img src={profile.avatarUrl} alt={profile.displayName} loading="lazy" decoding="async" />
+            <AvatarImage src={profile.avatarUrl} alt={profile.displayName} />
           )}
           <AvatarFallback>{initials(profile?.displayName ?? "?")}</AvatarFallback>
         </Avatar>

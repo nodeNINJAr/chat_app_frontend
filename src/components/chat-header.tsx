@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Info, Phone, Search, Users, Video } from "lucide-react";
 import Link from "next/link";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useConversationDisplay } from "@/hooks/use-conversation-display";
@@ -47,8 +47,7 @@ export function ChatHeader({
         <ArrowLeft className="size-4" />
       </Button>
       <Avatar>
-        {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary external/signed URL */}
-        {avatarUrl && <img src={avatarUrl} alt={name} loading="lazy" decoding="async" />}
+        {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
         <AvatarFallback>{initials(name)}</AvatarFallback>
       </Avatar>
       <button onClick={onOpenInfo} className="flex-1 overflow-hidden text-left">

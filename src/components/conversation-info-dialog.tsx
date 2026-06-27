@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -111,10 +111,7 @@ export function ConversationInfoDialog({
           ) : (
             <div className="flex flex-col items-center gap-2 py-2">
               <Avatar className="size-16">
-                {avatarUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarUrl} alt={name} loading="lazy" decoding="async" />
-                )}
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
                 <AvatarFallback className="text-lg">{initials(name)}</AvatarFallback>
               </Avatar>
               <p className="text-lg font-medium">{name}</p>
