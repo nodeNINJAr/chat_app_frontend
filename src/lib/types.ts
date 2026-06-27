@@ -62,6 +62,9 @@ export interface ConversationSummary {
     createdAt: string;
   } | null;
   lastMessageAt: string | null;
+  // Only set for direct conversations whose last message I sent — read
+  // receipts aren't computed for group chats. Null when not applicable.
+  lastMessageStatus: "sent" | "delivered" | "read" | null;
   unreadCount: number;
   isMuted: boolean;
   isArchived: boolean;

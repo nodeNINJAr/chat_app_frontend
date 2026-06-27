@@ -114,6 +114,44 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       );
     };
 
+    const onMessageStatusUpdated = ({
+      messageId,
+      status,
+    }: {
+      messageId: string;
+      userId: string;
+      status: "delivered" | "read";
+    }) => {
+      queryClient.setQueryData<ConversationSummary[]>(["conversations"], (prev) =>
+        prev?.map((c) =>
+          c.lastMessage?.messageId === messageId &&
+          c.lastMessage.senderId === useAuthStore.getState().user?.id &&
+          c.lastMessageStatus !== "read"
+            ? { ...c, lastMessageStatus: status }
+            : c,
+        ),
+      );
+    };
+
+    const onConversationRead = ({
+      conversationId,
+      userId,
+    }: {
+      conversationId: string;
+      userId: string;
+      upToMessageId: string;
+    }) => {
+      const myId = useAuthStore.getState().user?.id;
+      if (userId === myId) return;
+      queryClient.setQueryData<ConversationSummary[]>(["conversations"], (prev) =>
+        prev?.map((c) =>
+          c.id === conversationId && c.lastMessage?.senderId === myId
+            ? { ...c, lastMessageStatus: "read" }
+            : c,
+        ),
+      );
+    };
+
     const onPresenceOnline = ({ userId }: { userId: string }) => setUserOnline(userId);
     const onPresenceOffline = ({ userId }: { userId: string }) =>
       setUserOffline(userId);
@@ -165,6 +203,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socket.on("message:edited", onMessageEdited);
     socket.on("message:deleted", onMessageDeleted);
     socket.on("message:reaction-updated", onReactionUpdated);
+    socket.on("message:status-updated", onMessageStatusUpdated);
+    socket.on("conversation:read", onConversationRead);
     socket.on("presence:online", onPresenceOnline);
     socket.on("presence:offline", onPresenceOffline);
     socket.on("presence:snapshot", onPresenceSnapshot);
@@ -180,6 +220,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       socket.off("message:edited", onMessageEdited);
       socket.off("message:deleted", onMessageDeleted);
       socket.off("message:reaction-updated", onReactionUpdated);
+      socket.off("message:status-updated", onMessageStatusUpdated);
+      socket.off("conversation:read", onConversationRead);
       socket.off("presence:online", onPresenceOnline);
       socket.off("presence:offline", onPresenceOffline);
       socket.off("presence:snapshot", onPresenceSnapshot);
