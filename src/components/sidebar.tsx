@@ -1,10 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { ConversationRow } from "@/components/conversation-row";
 import { OnlineUsersStrip } from "@/components/online-users-strip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -17,10 +18,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { createDirectConversation, getConversations, logout, searchUsers } from "@/lib/api";
+import {
+  createDirectConversation,
+  deleteConversationForMe,
+  getConversations,
+  logout,
+  searchUsers,
+} from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { initials } from "@/lib/format";
 import { disconnectSocket } from "@/lib/socket";
+import type { ConversationSummary } from "@/lib/types";
 
 // Only needed once the user opens "New group" — split into its own chunk
 // instead of shipping it in the sidebar's initial bundle.
@@ -31,22 +39,78 @@ const CreateGroupDialog = dynamic(() =>
 export function Sidebar() {
   const router = useRouter();
   const params = useParams<{ conversationId?: string }>();
+  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
 
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
+  const deleteTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query.trim()), 300);
     return () => clearTimeout(t);
   }, [query]);
 
+  // Clears any still-pending delete timers if the sidebar unmounts (e.g.
+  // logout) before the 5s undo window elapses, so we don't fire an API call
+  // for a session that's no longer authenticated.
+  useEffect(() => {
+    const timers = deleteTimers.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
+    };
+  }, []);
+
   const { data: conversations, isLoading: conversationsLoading } = useQuery({
     queryKey: ["conversations"],
     queryFn: getConversations,
   });
+
+  function handleDeleteConversation(conversation: ConversationSummary) {
+    setPendingDeleteIds((prev) => new Set(prev).add(conversation.id));
+    if (params.conversationId === conversation.id) {
+      router.push("/chat");
+    }
+
+    const timer = setTimeout(async () => {
+      deleteTimers.current.delete(conversation.id);
+      try {
+        await deleteConversationForMe(conversation.id);
+        await queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      } catch {
+        toast.error("Failed to delete chat");
+        setPendingDeleteIds((prev) => {
+          const next = new Set(prev);
+          next.delete(conversation.id);
+          return next;
+        });
+      }
+    }, 5000);
+    deleteTimers.current.set(conversation.id, timer);
+
+    toast("Chat deleted", {
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          const pending = deleteTimers.current.get(conversation.id);
+          if (pending) {
+            clearTimeout(pending);
+            deleteTimers.current.delete(conversation.id);
+          }
+          setPendingDeleteIds((prev) => {
+            const next = new Set(prev);
+            next.delete(conversation.id);
+            return next;
+          });
+        },
+      },
+    });
+  }
 
   const { data: searchResults } = useQuery({
     queryKey: ["user-search", debouncedQuery],
@@ -142,13 +206,16 @@ export function Sidebar() {
                     </div>
                   </div>
                 ))
-              : conversations?.map((c) => (
-                <ConversationRow
-                  key={c.id}
-                  conversation={c}
-                  active={params.conversationId === c.id}
-                />
-              ))}
+              : conversations
+                  ?.filter((c) => !pendingDeleteIds.has(c.id))
+                  .map((c) => (
+                    <ConversationRow
+                      key={c.id}
+                      conversation={c}
+                      active={params.conversationId === c.id}
+                      onDelete={handleDeleteConversation}
+                    />
+                  ))}
           {showResults && searchResults?.length === 0 && (
             <p className="px-3 py-2 text-sm text-muted-foreground">No users found.</p>
           )}
